@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#3048d6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Travel Games">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Travel Games</title>
+<style>
+/* VOICE: playful, tidy pocket puzzle book for a long flight
+   IDEA: a seat-back entertainment cartridge: games plus a little flight kit
+   PICTURE: the flight arc with the plane moving along it; each game's board, big and first
+   COLOUR and TYPE: cobalt case, white boards, sunflower accent, game-tile green/gold; system rounded type (no downloads, works offline)
+   LAYOUT: one thumb-friendly column (max 520px), sticky top bar, board then controls */
+:root{color-scheme:light dark;--bg:light-dark(#eef1fb,#0e1120);--card:light-dark(#fff,#1a1f35);--ink:light-dark(#141832,#eef0fa);--mute:light-dark(#596084,#9ba1c2);--line:light-dark(#d5daee,#2e3555);--blue:#3048d6;--bt:light-dark(#3048d6,#8fa1ff);--blue2:light-dark(#d9e0ff,#2b3678);--hl:light-dark(#eef1ff,#222a4c);--sun:#ffc93c;--grn:#3aa55d;--yel:#d4a419;--gry:light-dark(#7b7f8f,#454b62);--red:#e0413a;--key:light-dark(#d8ddf0,#363d5e);--p1:#f0644a;--p2:light-dark(#3048d6,#6f86ff);
+--rd:ui-rounded,"SF Pro Rounded","Arial Rounded MT Bold","Varela Round",system-ui,sans-serif}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:clip;-webkit-tap-highlight-color:transparent}
+button,select,input{font:inherit;color:inherit;touch-action:manipulation}
+button,select,a{cursor:pointer}
+button:focus-visible,select:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+[hidden]{display:none!important}
+.top{position:sticky;top:0;z-index:5;background:var(--blue);color:#fff;display:flex;align-items:center;gap:8px;padding:9px 12px;min-height:58px}
+.top h1{font:700 21px/1 var(--rd);margin:0;flex:1;text-align:center}
+.tb{min-width:44px;height:40px;border:0;border-radius:12px;background:rgb(255 255 255/.18);color:#fff;font-weight:800;padding:0 14px}
+.hero{background:var(--blue);color:#fff;padding:30px max(5vw,18px) 26px;text-align:center}
+.hero h1{font:700 clamp(38px,11vw,52px)/1.05 var(--rd);margin:0 0 4px;text-wrap:balance}
+.hero p{margin:0 auto 10px;max-width:32ch;opacity:.88;font-size:16px}
+.hf{display:block;color:#fff;text-decoration:none;max-width:380px;margin:0 auto}
+.hf b{display:block;font:700 26px/1.1 var(--rd)}.hf span{opacity:.85;font-weight:700;font-size:15px}
+.hbtn{display:inline-block;background:var(--sun);color:#1a1a1a;font-weight:800;text-decoration:none;padding:12px 20px;border-radius:14px;margin-top:2px}
+.arc{width:100%;height:auto;display:block}
+main{max-width:520px;margin:0 auto;padding:14px 12px 40px}
+.sec h2{font:700 20px/1.2 var(--rd);margin:20px 2px 10px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tile{background:var(--card);border-radius:20px;padding:14px;text-decoration:none;color:inherit;display:grid;gap:6px;align-content:start;box-shadow:0 1px 0 var(--line),0 10px 26px -18px rgb(20 30 90/.45)}
+.tile svg{width:52px;height:52px;display:block;margin-bottom:2px}
+.tile b{font:700 18px/1.15 var(--rd)}
+.tile span{color:var(--mute);font-size:14px;line-height:1.3}
+.tile em{font-style:normal;font-weight:800;font-size:13px;color:var(--bt)}
+.foot{margin-top:22px;display:grid;gap:8px;text-align:center;color:var(--mute);font-size:14px}
+.pill{justify-self:center;height:44px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:0 18px;font-weight:800}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.seg{display:flex;background:var(--card);border-radius:12px;padding:3px;border:1px solid var(--line)}
+.seg button{border:0;background:none;padding:0 12px;min-height:38px;border-radius:9px;font-weight:800;font-size:14px;color:var(--mute)}
+.seg button.on{background:var(--blue);color:#fff}
+.meta{font-weight:800;color:var(--mute);font-variant-numeric:tabular-nums;font-size:15px;white-space:nowrap}
+select,input:not([type=checkbox]){height:46px;border-radius:12px;border:1px solid var(--line);background:var(--card);padding:0 12px;font-weight:700;font-size:16px;width:100%}
+.row select{width:auto}
+/* sudoku */
+.sb{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));border:2px solid var(--ink);border-radius:10px;overflow:hidden;background:var(--card);margin:4px 0 14px}
+.c{aspect-ratio:1;border:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--card);font:700 clamp(19px,6.2vw,29px)/1 var(--rd);color:var(--bt);padding:0;position:relative}
+.c:nth-child(9n){border-right:0}.c:nth-child(n+73){border-bottom:0}
+.c.br{border-right:2px solid var(--ink)}.c.bb{border-bottom:2px solid var(--ink)}
+.c.gv{color:var(--ink)}.c.peer{background:var(--hl)}.c.same{background:var(--blue2)}.c.sel{background:var(--sun);color:#1a1a1a}.c.err{color:var(--red)}.c.sel.err{color:#b3150f}
+.nt{position:absolute;inset:2px;display:grid;grid-template-columns:repeat(3,1fr);font:800 clamp(8px,2.5vw,11px)/1 system-ui,sans-serif;color:var(--mute)}
+.nt i{font-style:normal;display:grid;place-items:center}
+.tools{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.tool{display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;color:var(--mute);font-weight:800;font-size:13px;padding:6px;border-radius:12px;min-height:54px}
+.tool svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.tool.on{color:var(--bt);background:var(--blue2)}
+.pad{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:5px}
+.pad button{height:62px;border:0;border-radius:12px;background:var(--card);box-shadow:0 1px 0 var(--line);font:700 27px/1 var(--rd);color:var(--bt);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0}
+.pad small{font:800 11px/1 system-ui,sans-serif;color:var(--mute)}
+.pad button:disabled{opacity:.28}
+/* word search */
+.wb{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:2px;background:var(--card);border-radius:18px;padding:8px;touch-action:none;user-select:none;-webkit-user-select:none;margin:4px 0 14px;box-shadow:0 1px 0 var(--line)}
+.wc{aspect-ratio:1;display:grid;place-items:center;font:700 clamp(17px,5.4vw,25px)/1 var(--rd);border-radius:999px}
+.wc.f{background:hsl(var(--h) 85% 60%/.5)}.wc.on{background:var(--sun);color:#1a1a1a}
+.wl{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.wl span{padding:6px 13px;border-radius:999px;background:var(--card);font-weight:800;font-size:15px;box-shadow:0 1px 0 var(--line)}
+.wl span.got{text-decoration:line-through;background:hsl(var(--h) 85% 60%/.45);color:var(--mute)}
+.hint{color:var(--mute);font-size:14px;text-align:center;margin:14px 0 0}
+/* wordle */
+.wg{display:grid;gap:6px;width:min(320px,100%);margin:4px auto 16px}
+.wr{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.t{aspect-ratio:1;display:grid;place-items:center;border:2px solid var(--line);border-radius:9px;font:700 clamp(24px,8vw,32px)/1 var(--rd);text-transform:uppercase;background:var(--card)}
+.t.fill{border-color:var(--mute)}.t.pop{animation:pop .12s}
+.t.g,.t.y,.t.x{color:#fff;border-color:transparent}
+.t.g{background:var(--grn)}.t.y{background:var(--yel)}.t.x{background:var(--gry)}
+.t.flip{animation:flip .5s ease}.wr.shake{animation:shake .4s}
+.kb{display:grid;gap:7px}.kr{display:flex;gap:5px;justify-content:center}
+.k{flex:1;max-width:46px;height:56px;border:0;border-radius:9px;background:var(--key);font-weight:800;font-size:17px;padding:0;text-transform:uppercase}
+.k.w{max-width:68px;flex:1.5;font-size:13px}
+.k.g{background:var(--grn);color:#fff}.k.y{background:var(--yel);color:#fff}.k.x{background:var(--gry);color:light-dark(#fff,#9ba1c2)}
+.done{background:var(--card);border-radius:16px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 1px 0 var(--line)}
+.done b{font:700 20px/1.1 var(--rd);letter-spacing:.06em}
+.done button{height:44px;border:0;border-radius:12px;background:var(--blue);color:#fff;font-weight:800;padding:0 16px}
+/* two player */
+.score{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.pl{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;background:var(--card);box-shadow:0 1px 0 var(--line);font-weight:800;border:3px solid transparent}
+.pl.turn{border-color:var(--sun)}.pl span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pl b{font:700 22px/1 var(--rd)}
+.dot{width:16px;height:16px;border-radius:50%;flex:none}
+.status{text-align:center;font:700 20px/1.2 var(--rd);margin:4px 0 12px;min-height:24px}
+.b3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:min(340px,100%);margin:0 auto}
+.t3{aspect-ratio:1;border:0;border-radius:18px;background:var(--card);box-shadow:0 1px 0 var(--line);padding:16%;display:grid}
+.t3 svg{width:100%;height:100%;fill:none;stroke-width:6;stroke-linecap:round}
+.t3.win{background:var(--sun)}
+.c4{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;background:var(--blue);padding:8px;border-radius:18px;width:min(400px,100%);margin:0 auto}
+.h{aspect-ratio:1;border-radius:50%;background:var(--bg);position:relative;border:0;padding:0}
+.dk{position:absolute;inset:0;border-radius:50%}.dk.a{background:var(--p1)}.dk.b{background:var(--sun)}
+.dk.new{animation:drop .42s cubic-bezier(.45,0,1,.7)}
+.h.win .dk{box-shadow:inset 0 0 0 4px #fff,0 0 0 3px #fff}
+.db{width:min(360px,100%);margin:0 auto;display:block;touch-action:manipulation}
+.db .hit{stroke:transparent;stroke-width:26;cursor:pointer;pointer-events:stroke}
+.db .ln{stroke:var(--line);stroke-width:4;stroke-dasharray:2 8;stroke-linecap:round;pointer-events:none}
+.db .ln.a{stroke:var(--p1);stroke-dasharray:none;stroke-width:7}.db .ln.b{stroke:var(--p2);stroke-dasharray:none;stroke-width:7}
+.db .bx.a{fill:var(--p1);opacity:.28}.db .bx.b{fill:var(--p2);opacity:.28}
+.db circle{fill:var(--ink)}
+/* quiz */
+.qp{background:var(--card);border-radius:22px;padding:22px 16px;text-align:center;margin-bottom:12px;box-shadow:0 1px 0 var(--line)}
+.qp span{color:var(--mute);font-weight:800}
+.qp b{display:block;font:700 clamp(28px,8vw,38px)/1.1 var(--rd);margin-top:6px;text-wrap:balance}
+.opts{display:grid;gap:8px}
+.opt{min-height:56px;border:0;border-radius:14px;background:var(--card);font-weight:800;font-size:18px;box-shadow:0 1px 0 var(--line)}
+.opt.ok{background:var(--grn);color:#fff}.opt.no{background:var(--red);color:#fff}
+/* flight */
+.fcard{background:var(--blue);color:#fff;border-radius:22px;padding:12px 14px 18px;text-align:center}
+.fcard .big{font:700 clamp(30px,9vw,42px)/1.05 var(--rd)}.fcard .sub{opacity:.88;font-weight:700}
+.bar{height:8px;border-radius:9px;background:rgb(255 255 255/.25);margin:12px 6px 0;overflow:hidden}.bar i{display:block;height:100%;background:var(--sun);border-radius:9px}
+.form{display:grid;gap:12px;margin:14px 0}
+.form label{display:grid;gap:4px;font-weight:800;font-size:14px;color:var(--mute)}
+.form input,.form select{color:var(--ink)}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.sw{display:flex!important;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card);padding:10px 12px;border-radius:14px;color:var(--ink)!important;font-size:16px!important}
+.sw input{width:26px;height:26px;accent-color:var(--blue)}.sw select{width:auto;flex:1 0 150px}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0}
+.facts div{background:var(--card);border-radius:14px;padding:10px 12px;box-shadow:0 1px 0 var(--line)}
+.facts dt{font-size:13px;color:var(--mute);font-weight:800}.facts dd{margin:0;font:700 18px/1.25 var(--rd)}
+/* checklist */
+.prog{font-weight:800;color:var(--mute);margin-bottom:8px}
+.ck{display:flex;align-items:center;gap:4px;background:var(--card);border-radius:14px;padding:2px 4px;margin-bottom:6px;box-shadow:0 1px 0 var(--line)}
+.ck .bx2{flex:1;display:flex;align-items:center;gap:12px;border:0;background:none;text-align:left;min-height:50px;padding:0 10px;font-weight:700;font-size:17px}
+.ck .bx2::before{content:'';width:24px;height:24px;border-radius:8px;border:2px solid var(--mute);flex:none}
+.ck.on .bx2::before{border-color:var(--grn);background:var(--grn) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12l4 4 8-8' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/20px no-repeat}
+.ck.on .bx2{color:var(--mute);text-decoration:line-through}
+.ck .x{width:44px;height:44px;border:0;background:none;color:var(--mute);font-size:24px;border-radius:10px}
+.add{display:flex;gap:8px;margin:12px 0}.add button{flex:none;height:46px;border:0;border-radius:12px;background:var(--blue);color:#fff;font-weight:800;padding:0 18px}
+/* shared */
+.modal{position:fixed;inset:0;background:rgb(8 12 36/.55);display:grid;place-items:center;z-index:20;padding:20px}
+.box{background:var(--card);border-radius:22px;padding:24px 20px 20px;width:min(360px,100%);text-align:center;box-shadow:0 20px 60px -20px rgb(0 0 0/.5)}
+.box h2{font:700 32px/1.1 var(--rd);margin:0 0 6px}.box p{margin:0 0 8px;color:var(--mute)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:14px 0}
+.stats b{display:block;font:700 28px/1 var(--rd)}.stats span{font-size:13px;color:var(--mute)}
+.dist{text-align:left;margin:6px 0 10px;display:grid;gap:4px}
+.dist div{display:grid;grid-template-columns:14px minmax(0,1fr);gap:8px;align-items:center;font-weight:800;font-size:14px}
+.dist i{display:block;font-style:normal;background:var(--gry);color:#fff;border-radius:5px;padding:1px 7px;text-align:right;min-width:24px}.dist i.now{background:var(--grn)}
+.btn{display:block;width:100%;height:50px;border:0;border-radius:14px;background:var(--blue);color:#fff;font-weight:800;font-size:17px;margin-top:10px}
+.btn.alt{background:var(--hl);color:var(--ink)}
+.toast{position:fixed;left:50%;top:72px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:12px;font-weight:800;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30;max-width:calc(100vw - 32px);text-align:center}
+.toast.show{opacity:1}
+@keyframes pop{50%{transform:scale(1.1)}}
+@keyframes flip{50%{transform:rotateX(90deg)}}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@keyframes drop{from{transform:translateY(calc(var(--r) * -118%))}}
+@media(prefers-reduced-motion:reduce){.t.pop,.t.flip,.wr.shake,.dk.new{animation:none}}
+</style></head><body>
+<header class="top" hidden><button class="tb" id="back" aria-label="Back to all games">‹ Back</button><h1 id="ttl"></h1><button class="tb" id="act">New</button></header>
+<section class="hero" id="hero"><h1>Travel Games</h1><p>Puzzles, two-player games and a flight kit. No Wi-Fi needed.</p><div id="hfl"></div></section>
+<main id="app"></main>
+<div class="modal" id="modal" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+{
+const $=s=>document.querySelector(s);
+const rand=n=>Math.random()*n|0;
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LS={get(k,d){try{const v=localStorage.getItem('tg_'+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem('tg_'+k,JSON.stringify(v))}catch(e){}}};
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const app=$('#app'),hero=$('#hero'),topb=$('.top'),ttl=$('#ttl'),act=$('#act'),modal=$('#modal'),toastEl=$('#toast');
+const cap=s=>s[0].toUpperCase()+s.slice(1);
+const fmt=s=>`${s/60|0}:${String(s%60).padStart(2,'0')}`;
+let onKey=null,cleanup=null,actFn=null,tt,TM=[];
+const later=(fn,ms)=>{TM.push(setTimeout(fn,ms))};
+
+/* ---------- HAPTICS ---------- */
+let HAP=LS.get('hap',true),sw=null;
+const HP={tap:8,ok:[14,50,14],bad:[50,40,50],win:[20,60,20,60,90]};
+function tick(){if(!sw){sw=document.createElement('label');sw.setAttribute('aria-hidden','true');sw.style.cssText='position:fixed;left:-200px;top:0;width:1px;height:1px;overflow:hidden;opacity:0';sw.innerHTML='<input type="checkbox" switch tabindex="-1">';document.body.appendChild(sw)}sw.click()}
+function buzz(k='tap'){if(!HAP)return;const p=HP[k]||8;try{if(navigator.vibrate&&navigator.vibrate(p))return}catch(e){}
+  try{tick();if(Array.isArray(p))for(let i=1;i<Math.ceil(p.length/2);i++)setTimeout(tick,i*110)}catch(e){}}
+document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('button,a,.h');if(t&&!t.dataset.quiet)buzz('tap')},true);
+
+act.onclick=()=>actFn&&actFn();
+$('#back').onclick=()=>{location.hash=''};
+function setTop(t,fn,label='New'){ttl.textContent=t;actFn=fn;act.textContent=label;topb.hidden=false;hero.hidden=true}
+function toast(m,ms=1600){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>toastEl.classList.remove('show'),ms)}
+function showModal(html,binds){modal.innerHTML=`<div class="box" role="dialog" aria-modal="true">${html}</div>`;modal.hidden=false;modal.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>binds[b.dataset.m]());const f=modal.querySelector('button');f&&f.focus()}
+function closeModal(){modal.hidden=true;modal.innerHTML=''}
+const endModal=(h,p,again)=>showModal(`<h2>${h}</h2><p>${p}</p><button class="btn" data-m="n">Play again</button><button class="btn alt" data-m="h">All games</button>`,{n:()=>{closeModal();again()},h:()=>{closeModal();location.hash=''}});
+modal.onclick=e=>{if(e.target===modal)closeModal()};
+addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden)return closeModal();if(onKey&&modal.hidden&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!/INPUT|SELECT/.test(document.activeElement.tagName))onKey(e)});
+
+/* ---------- FLIGHT HELPERS ---------- */
+const LTZ=(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'}catch(e){return'UTC'}})();
+const hm=ms=>{const m=Math.max(0,Math.round(ms/60000));return m>=60?`${m/60|0}h ${m%60}m`:`${m}m`};
+const clock=(ms,tz)=>{try{return new Intl.DateTimeFormat(undefined,{weekday:'short',hour:'numeric',minute:'2-digit',timeZone:tz}).format(ms)}catch(e){return new Date(ms).toLocaleTimeString()}};
+function fi(F,now){const dep=F.dep,arr=dep+F.dur*60000;if(now<dep)return{s:'pre',p:0,until:dep-now,arr};if(now<arr)return{s:'air',p:(now-dep)/(arr-dep),left:arr-now,el:now-dep,arr};return{s:'done',p:1,arr}}
+const PLANE='M14 0c0-1.6-1.6-2.6-3.4-2.6H3.6L-4.6-13h-3.6l4.4 10.4h-7.6l-3-3.6h-2.6l1.8 6.2-1.8 6.2h2.6l3-3.6h7.6L-8.2 13h3.6l8.2-10.4h7c1.8 0 3.4-1 3.4-2.6z';
+function arcSVG(p,a,b){const P=[[24,96],[170,-6],[316,96]],t=Math.min(1,Math.max(0,p)),u=1-t;
+  const x=u*u*P[0][0]+2*u*t*P[1][0]+t*t*P[2][0],y=u*u*P[0][1]+2*u*t*P[1][1]+t*t*P[2][1];
+  const ang=Math.atan2(2*u*(P[1][1]-P[0][1])+2*t*(P[2][1]-P[1][1]),2*u*(P[1][0]-P[0][0])+2*t*(P[2][0]-P[1][0]))*180/Math.PI;
+  const d='M24 96Q170 -6 316 96';
+  return`<svg class="arc" viewBox="0 0 340 136" aria-hidden="true"><path d="${d}" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="3" stroke-dasharray="1 9" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#ffc93c" stroke-width="4" stroke-linecap="round" pathLength="100" stroke-dasharray="${(t*100).toFixed(2)} 200"/><circle cx="24" cy="96" r="6" fill="#ffc93c"/><circle cx="316" cy="96" r="6" fill="#fff"/><g font-family="ui-rounded,system-ui,sans-serif" font-weight="700" font-size="17" fill="#fff" text-anchor="middle"><text x="26" y="132">${a}</text><text x="314" y="132">${b}</text></g><g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${ang.toFixed(1)}) scale(1.25)"><path d="${PLANE}" fill="#fff"/></g></svg>`}
+/* stretch reminders run while the app is open */
+setInterval(()=>{const F=LS.get('flight',null);if(!F||!F.set||!F.remind)return;const now=Date.now(),f=fi(F,now);if(f.s!=='air')return;if(now-(F.last||0)>=F.every*60000){F.last=now;LS.set('flight',F);toast('Stretch break: stand up, stretch, sip some water',5000);buzz('win')}},30000);
+
+/* ---------- ICONS ---------- */
+const g12=(t,x,y,f='#fff')=>`<text x="${x}" y="${y}" fill="${f}">${t}</text>`;
+const ICON={
+s:`<rect width="72" height="72" rx="18" fill="#3048d6"/><rect x="30" y="30" width="14" height="14" fill="#ffc93c"/><path d="M30 14v44M44 14v44M14 30h44M14 44h44" stroke="#fff" stroke-opacity=".4" stroke-width="2"/><rect x="14" y="14" width="44" height="44" rx="6" fill="none" stroke="#fff" stroke-width="3"/><g font-family="ui-rounded,system-ui,sans-serif" font-weight="700" font-size="12" text-anchor="middle">${g12(5,22,26)+g12(3,51,40)+g12(7,37,41,'#1a1a1a')+g12(9,22,54)}</g>`,
+w:`<rect width="72" height="72" rx="18" fill="#f0644a"/><rect x="9" y="27" width="54" height="18" rx="9" fill="#ffc93c"/><g font-family="ui-rounded,system-ui,sans-serif" font-weight="700" font-size="12" text-anchor="middle">${['KTRE','WORD','PLAS'].map((w,r)=>[...w].map((c,i)=>g12(c,18+i*12,22+r*18,r===1?'#1a1a1a':'#fff')).join('')).join('')}</g>`,
+d:`<rect width="72" height="72" rx="18" fill="#3aa55d"/>${['xyx','yxg','ggg'].map((r,y)=>[...r].map((s,x)=>`<rect x="${12+x*17}" y="${12+y*17}" width="14" height="14" rx="3" fill="${s==='g'?'#fff':s==='y'?'#ffc93c':'#1e6e3a'}"/>`).join('')).join('')}`,
+q:`<rect width="72" height="72" rx="18" fill="#0f9db0"/><g fill="none" stroke="#fff" stroke-width="3"><circle cx="36" cy="36" r="20"/><ellipse cx="36" cy="36" rx="9" ry="20"/><path d="M16 36h40M20 26h32M20 46h32"/></g><circle cx="52" cy="20" r="7" fill="#ffc93c"/>`,
+t:`<rect width="72" height="72" rx="18" fill="#e94e8a"/><path d="M30 14v44M42 14v44M14 30h44M14 42h44" stroke="#fff" stroke-opacity=".5" stroke-width="3"/><path d="M18 18l8 8M26 18l-8 8M46 46l8 8M54 46l-8 8" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/><circle cx="36" cy="36" r="3.6" fill="none" stroke="#ffc93c" stroke-width="3"/>`,
+f:`<rect width="72" height="72" rx="18" fill="#1f2d8f"/>${[0,1,2].map(r=>[0,1,2].map(c=>`<circle cx="${20+c*16}" cy="${20+r*16}" r="6.5" fill="${['#0e1120','#0e1120','#ffc93c','#0e1120','#f0644a','#ffc93c','#f0644a','#f0644a','#ffc93c'][r*3+c]}"/>`).join('')).join('')}`,
+b:`<rect width="72" height="72" rx="18" fill="#6a55d6"/><rect x="18" y="18" width="18" height="18" fill="#ffc93c" opacity=".9"/><path d="M18 18h36M18 18v36M36 18v18M18 36h18M54 18v18" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>${[18,36,54].map(y=>[18,36,54].map(x=>`<circle cx="${x}" cy="${y}" r="3.6" fill="#fff"/>`).join('')).join('')}`,
+p:`<rect width="72" height="72" rx="18" fill="#1e2a78"/><path d="M12 54Q36 10 60 54" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="2.5" stroke-dasharray="1 6" stroke-linecap="round"/><circle cx="12" cy="54" r="4" fill="#ffc93c"/><circle cx="60" cy="54" r="4" fill="#fff"/><g transform="translate(36 32) scale(.95)"><path d="${PLANE}" fill="#fff"/></g>`,
+k:`<rect width="72" height="72" rx="18" fill="#4a5068"/>${[18,32,46].map((y,i)=>`<rect x="15" y="${y}" width="10" height="10" rx="3" fill="${i<2?'#3aa55d':'none'}" stroke="#fff" stroke-width="2"/><path d="M31 ${y+5}h${i<2?18:24}" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="${i<2?.5:1}"/>`).join('')}`};
+const ic=k=>`<svg viewBox="0 0 72 72" aria-hidden="true">${ICON[k]}</svg>`;
+
+/* ---------- HOME ---------- */
+function heroFlight(){const F=LS.get('flight',null);
+  if(!F||!F.set)return`${arcSVG(0,'FROM','TO')}<a class="hbtn" href="#flight">Set up your flight</a>`;
+  const f=fi(F,Date.now()),line=f.s==='pre'?`Departs in ${hm(f.until)}`:f.s==='air'?`${hm(f.left)} to go`:'Landed. Welcome!';
+  return`<a class="hf" href="#flight">${arcSVG(f.p,esc(F.from||'—'),esc(F.to||'—'))}<b>${line}</b><span>${f.s==='air'?Math.round(f.p*100)+'% of the way · ':''}Lands ${clock(f.arr,F.tz)} local</span></a>`}
+function Home(){
+  topb.hidden=true;hero.hidden=false;
+  const hf=$('#hfl'),dh=()=>{hf.innerHTML=heroFlight()};dh();const ti=setInterval(dh,30000);cleanup=()=>clearInterval(ti);
+  const ss=LS.get('sstats',{w:0}),ws=LS.get('wsstats',{w:0}),wd=LS.get('wdstats',{p:0,w:0,s:0,m:0,d:[0,0,0,0,0,0]}),qb=LS.get('qbest',0);
+  const pk=LS.get('pack',null),pkn=pk?pk.filter(x=>x.on).length+'/'+pk.length+' packed':'Pre-flight list';
+  const sc=k=>{const x=LS.get(k,null);return x&&x.sc?`${x.sc[0]}–${x.sc[1]}`:''};
+  const T=(h,k,t,d,s)=>`<a class="tile" href="#${h}">${ic(k)}<b>${t}</b><span>${d}</span>${s?`<em>${s}</em>`:''}</a>`;
+  const off=navigator.serviceWorker&&navigator.serviceWorker.controller;
+  app.innerHTML=`<div class="sec"><h2>Play solo</h2><div class="grid">
+   ${T('sudoku','s','Sudoku','Fill the grid 1 to 9',ss.w+' solved')}
+   ${T('words','w','Word Search','Themed hidden words',ws.w+' cleared')}
+   ${T('wordle','d','Wordle','Five letters, six tries',wd.p?`Streak ${wd.s}`:'Unlimited words')}
+   ${T('quiz','q','Capitals Quiz','Countries and capitals',qb?`Best ${qb}/10`:'10 questions')}
+  </div></div><div class="sec"><h2>Two players</h2><div class="grid">
+   ${T('ttt','t','Tic-Tac-Toe','Pass the phone or play it',sc('ttt'))}
+   ${T('four','f','Connect Four','Drop four in a row',sc('four'))}
+   ${T('dots','b','Dots & Boxes','Close the most boxes',sc('dots'))}
+  </div></div><div class="sec"><h2>Flight kit</h2><div class="grid">
+   ${T('flight','p','Flight Tracker','Time left, destination clock, stretch nudges','')}
+   ${T('pack','k','Checklist','Don’t leave it behind',pkn)}
+  </div></div>
+  <div class="foot"><button class="pill" id="hap" data-quiet="1">Haptics: ${HAP?'On':'Off'}</button><div>${off?'Saved for airplane mode on this phone.':'Everything runs on your phone once this page is open.'} Two-player games are pass-and-play, or play against the phone.</div></div>`;
+  $('#hap').onclick=e=>{HAP=!HAP;LS.set('hap',HAP);e.target.textContent='Haptics: '+(HAP?'On':'Off');buzz('ok')};
+}
+
+/* ---------- SUDOKU ---------- */
+const DIFF={easy:38,medium:47,hard:54};
+function cands(g,i){const r=i/9|0,c=i%9,u=new Array(10).fill(false);for(let k=0;k<9;k++){u[g[r*9+k]]=true;u[g[k*9+c]]=true}const br=r-r%3,bc=c-c%3;for(let y=0;y<3;y++)for(let x=0;x<3;x++)u[g[(br+y)*9+bc+x]]=true;const o=[];for(let n=1;n<=9;n++)if(!u[n])o.push(n);return o}
+function fillG(g){const i=g.indexOf(0);if(i<0)return true;for(const n of shuffle(cands(g,i))){g[i]=n;if(fillG(g))return true}g[i]=0;return false}
+function countS(g,lim){let best=-1,bc=null;for(let i=0;i<81;i++)if(!g[i]){const c=cands(g,i);if(!c.length)return 0;if(!bc||c.length<bc.length){best=i;bc=c;if(c.length===1)break}}if(best<0)return 1;let t=0;for(const n of bc){g[best]=n;t+=countS(g,lim-t);if(t>=lim)break}g[best]=0;return t}
+function genS(d){const sol=Array(81).fill(0);fillG(sol);const p=sol.slice();let rem=0;for(const i of shuffle([...Array(81).keys()])){if(rem>=DIFF[d])break;const v=p[i];p[i]=0;if(countS(p,2)!==1)p[i]=v;else rem++}return{diff:d,sol,giv:p.map(v=>v>0),cur:p,notes:Array(81).fill(0),sel:-1,hist:[],mist:0,time:0,nm:false,done:false}}
+const TI={undo:'<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',erase:'<path d="M20 20H9L4 15l10-10 7 7-8 8"/><path d="m9 10 6 6"/>',notes:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',hint:'<path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V16h8v-1.3A7 7 0 0 0 12 2z"/>'};
+function Sudoku(){
+  let S=LS.get('sudoku',null);if(!S||!S.sol||S.done)S=genS(S&&S.diff||'easy');
+  const save=()=>LS.set('sudoku',S);
+  setTop('Sudoku',()=>{S=genS(S.diff);save();draw()});
+  app.innerHTML=`<div class="row"><div class="seg" id="sd">${Object.keys(DIFF).map(d=>`<button data-d="${d}">${cap(d)}</button>`).join('')}</div><div class="meta" id="sm"></div></div><div class="sb" id="sb" role="grid" aria-label="Sudoku board"></div><div class="tools" id="st">${Object.keys(TI).map(a=>`<button class="tool" data-a="${a}"><svg viewBox="0 0 24 24">${TI[a]}</svg>${cap(a)}</button>`).join('')}</div><div class="pad" id="sp"></div>`;
+  const sb=$('#sb'),sp=$('#sp'),sm=$('#sm'),st=$('#st'),sd=$('#sd');
+  const box=i=>((i/27|0)*3)+((i%9)/3|0),peer=(a,b)=>(a/9|0)===(b/9|0)||a%9===b%9||box(a)===box(b);
+  const meta=()=>{sm.textContent=`${fmt(S.time)} · ${S.mist} mistake${S.mist===1?'':'s'}`};
+  const solved=()=>S.cur.every((v,k)=>v===S.sol[k]);
+  function draw(){const sv=S.sel>=0?S.cur[S.sel]:0;
+    sb.innerHTML=S.cur.map((v,i)=>{const r=i/9|0,c=i%9;let cl='c';if(c%3===2&&c<8)cl+=' br';if(r%3===2&&r<8)cl+=' bb';if(S.giv[i])cl+=' gv';
+      if(S.sel>=0){if(i===S.sel)cl+=' sel';else if(sv&&v===sv)cl+=' same';else if(peer(i,S.sel))cl+=' peer'}
+      if(v&&v!==S.sol[i])cl+=' err';
+      const inner=v||(S.notes[i]?`<span class="nt">${[1,2,3,4,5,6,7,8,9].map(n=>`<i>${S.notes[i]>>n&1?n:''}</i>`).join('')}</span>`:'');
+      return`<button class="${cl}" data-i="${i}" aria-label="Row ${r+1} column ${c+1}${v?', '+v:', empty'}">${inner}</button>`}).join('');
+    const cnt=Array(10).fill(0);S.cur.forEach((v,i)=>{if(v&&v===S.sol[i])cnt[v]++});
+    sp.innerHTML=[1,2,3,4,5,6,7,8,9].map(n=>`<button data-n="${n}" ${cnt[n]>=9?'disabled':''} aria-label="${n}">${n}<small>${9-cnt[n]}</small></button>`).join('');
+    sd.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.d===S.diff));
+    st.querySelector('[data-a=notes]').classList.toggle('on',S.nm);meta()}
+  function clearPeers(i,n){for(let k=0;k<81;k++)if(k!==i&&peer(k,i))S.notes[k]&=~(1<<n)}
+  function put(n){if(S.done||S.sel<0||S.giv[S.sel])return;const i=S.sel;
+    if(S.nm){if(S.cur[i])return;S.hist.push([i,S.cur[i],S.notes[i]]);S.notes[i]^=1<<n}
+    else{S.hist.push([i,S.cur[i],S.notes[i]]);S.cur[i]=S.cur[i]===n?0:n;S.notes[i]=0;if(S.cur[i]===n){if(n!==S.sol[i]){S.mist++;buzz('bad');toast('Not quite')}else clearPeers(i,n)}}
+    if(S.hist.length>300)S.hist.shift();save();draw();if(solved())win()}
+  function erase(){if(S.done||S.sel<0||S.giv[S.sel])return;const i=S.sel;if(!S.cur[i]&&!S.notes[i])return;S.hist.push([i,S.cur[i],S.notes[i]]);S.cur[i]=0;S.notes[i]=0;save();draw()}
+  function undo(){const h=S.hist.pop();if(!h)return toast('Nothing to undo');S.sel=h[0];S.cur[h[0]]=h[1];S.notes[h[0]]=h[2];save();draw()}
+  function hint(){if(S.done)return;let i=S.sel;if(i<0||S.giv[i]||S.cur[i]===S.sol[i]){const open=S.cur.map((v,k)=>v!==S.sol[k]?k:-1).filter(k=>k>=0);if(!open.length)return;i=open[rand(open.length)]}
+    S.hist.push([i,S.cur[i],S.notes[i]]);S.cur[i]=S.sol[i];S.notes[i]=0;clearPeers(i,S.sol[i]);S.sel=i;save();draw();if(solved())win()}
+  function win(){S.done=true;save();buzz('win');const s=LS.get('sstats',{w:0,best:{}});s.w++;s.best=s.best||{};const b=s.best[S.diff],rec=!b||S.time<b;if(rec)s.best[S.diff]=S.time;LS.set('sstats',s);
+    endModal('Solved!',`${cap(S.diff)} in ${fmt(S.time)} with ${S.mist} mistake${S.mist===1?'':'s'}.${rec?' New best time.':` Best: ${fmt(b)}.`}`,()=>{S=genS(S.diff);save();draw()})}
+  sb.onclick=e=>{const c=e.target.closest('.c');if(!c)return;S.sel=+c.dataset.i;draw()};
+  sp.onclick=e=>{const b=e.target.closest('button');if(b)put(+b.dataset.n)};
+  st.onclick=e=>{const b=e.target.closest('.tool');if(!b)return;const a=b.dataset.a;if(a==='undo')undo();else if(a==='erase')erase();else if(a==='hint')hint();else{S.nm=!S.nm;save();draw()}};
+  sd.onclick=e=>{const b=e.target.closest('button');if(!b)return;S=genS(b.dataset.d);save();draw()};
+  onKey=e=>{const k=e.key;if(/^[1-9]$/.test(k))put(+k);else if(k==='Backspace'||k==='Delete'||k==='0')erase();else if(k==='n'||k==='N'){S.nm=!S.nm;draw()}
+    else if(k.startsWith('Arrow')){e.preventDefault();let i=S.sel<0?40:S.sel,r=i/9|0,c=i%9;if(k==='ArrowUp')r=(r+8)%9;if(k==='ArrowDown')r=(r+1)%9;if(k==='ArrowLeft')c=(c+8)%9;if(k==='ArrowRight')c=(c+1)%9;S.sel=r*9+c;draw()}};
+  const tm=setInterval(()=>{if(!S.done&&!document.hidden&&modal.hidden){S.time++;meta();if(S.time%5===0)save()}},1000);
+  cleanup=()=>{clearInterval(tm);save()};draw();
+}
+
+/* ---------- WORD SEARCH ---------- */
+const THEMES={
+Travel:'AIRPORT PASSPORT LUGGAGE PILOT RUNWAY TICKET CABIN WINDOW AISLE BOARDING JETLAG GATE TAXI SUITCASE PRETZEL BLANKET',
+Animals:'TIGER ZEBRA OTTER EAGLE RABBIT MONKEY PANDA KOALA SHARK WHALE GIRAFFE LIZARD BEAVER FALCON MOOSE PENGUIN',
+Food:'PIZZA TACO PASTA BURGER COOKIE MANGO BANANA CHEESE BACON WAFFLE DONUT SALAD NOODLE PEPPER LEMON SUSHI',
+Cities:'PARIS TOKYO LONDON ROME MADRID BERLIN DUBLIN SEOUL CAIRO LIMA SYDNEY TORONTO DENVER BOSTON LISBON VIENNA',
+Nature:'RIVER FOREST CANYON MEADOW VALLEY ISLAND CLOUD STORM THUNDER BREEZE PEBBLE DESERT GLACIER OCEAN MAPLE',
+Space:'PLANET COMET GALAXY ORBIT ROCKET NEBULA METEOR SATURN MARS VENUS ASTEROID LUNAR STAR COSMOS PULSAR',
+Sports:'SOCCER TENNIS HOCKEY GOLF RUGBY BOXING SKIING SURFING BASEBALL KARATE ARCHERY ROWING CYCLING BOWLING DIVING',
+Weather:'SUNNY RAINY WINDY SNOW SLEET HAIL FOGGY FROST RAINBOW TORNADO DRIZZLE HUMID BLIZZARD MONSOON CLOUDY'};
+const HUES=[210,38,140,330,270,12,180,95,300,60];
+const DIRS={easy:[[0,1],[1,0]],normal:[[0,1],[1,0],[1,1],[-1,1]],hard:[[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]]};
+function wsGen(theme,diff){if(!THEMES[theme])theme='Travel';const N=10,dirs=DIRS[diff],g=Array(N*N).fill(''),placed=[];
+  for(const w of shuffle(THEMES[theme].split(' '))){if(placed.length>=8)break;
+    for(let t=0;t<200;t++){const[dr,dc]=dirs[rand(dirs.length)],r0=rand(N),c0=rand(N),re=r0+dr*(w.length-1),ce=c0+dc*(w.length-1);if(re<0||re>=N||ce<0||ce>=N)continue;
+      const cells=[];let ok=true;for(let k=0;k<w.length;k++){const i=(r0+dr*k)*N+c0+dc*k;if(g[i]&&g[i]!==w[k]){ok=false;break}cells.push(i)}
+      if(!ok)continue;cells.forEach((i,k)=>g[i]=w[k]);placed.push({w,cells,f:-1});break}}
+  const AL='AABCDEEEFGHIIKLMNOOPRRSSTTUWY';for(let i=0;i<g.length;i++)if(!g[i])g[i]=AL[rand(AL.length)];
+  return{theme,diff,g,words:placed.sort((a,b)=>a.w.localeCompare(b.w)),done:false,time:0}}
+function WordSearch(){
+  let W=LS.get('ws',null);if(!W||W.done||!W.g)W=wsGen(W&&W.theme||'Travel',W&&W.diff||'normal');
+  const save=()=>LS.set('ws',W);
+  setTop('Word Search',()=>{W=wsGen(W.theme,W.diff);save();build()});
+  app.innerHTML=`<div class="row"><div class="seg" id="wd">${Object.keys(DIRS).map(d=>`<button data-d="${d}">${cap(d)}</button>`).join('')}</div><select id="wt" aria-label="Theme">${Object.keys(THEMES).map(t=>`<option>${t}</option>`).join('')}</select></div><div class="row"><b id="wth"></b><div class="meta" id="wm"></div></div><div class="wb" id="wb"></div><div class="wl" id="wl"></div><p class="hint">Drag across a word, or tap its first letter then its last.</p>`;
+  const wb=$('#wb'),wl=$('#wl'),wm=$('#wm'),wd=$('#wd'),wt=$('#wt');
+  let start=-1,anchor=-1,line=[];
+  const nfound=()=>W.words.filter(x=>x.f>=0).length;
+  const meta=()=>{wm.textContent=`${nfound()}/${W.words.length} found · ${fmt(W.time)}`};
+  function build(){const fm={};W.words.filter(x=>x.f>=0).sort((a,b)=>a.f-b.f).forEach(x=>x.cells.forEach(i=>fm[i]=x.f));
+    wb.innerHTML=W.g.map((ch,i)=>`<div class="wc${i in fm?' f':''}" data-i="${i}"${i in fm?` style="--h:${HUES[fm[i]%HUES.length]}"`:''}>${ch}</div>`).join('');
+    wl.innerHTML=W.words.map(x=>`<span class="${x.f>=0?'got':''}" style="--h:${HUES[Math.max(0,x.f)%HUES.length]}">${x.w}</span>`).join('');
+    wd.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.d===W.diff));wt.value=W.theme;$('#wth').textContent=W.theme;meta()}
+  function lineOf(a,b){const r1=a/10|0,c1=a%10,dr=(b/10|0)-r1,dc=b%10-c1;if(dr&&dc&&Math.abs(dr)!==Math.abs(dc))return null;const n=Math.max(Math.abs(dr),Math.abs(dc)),sr=Math.sign(dr),sc=Math.sign(dc),o=[];for(let k=0;k<=n;k++)o.push((r1+sr*k)*10+c1+sc*k);return o}
+  function paint(){const on=new Set(line);if(anchor>=0)on.add(anchor);wb.querySelectorAll('.wc').forEach(c=>c.classList.toggle('on',on.has(+c.dataset.i)))}
+  function check(cells){if(!cells||cells.length<2)return;const key=cells.join(),rev=cells.slice().reverse().join();
+    const hit=W.words.find(x=>x.f<0&&(x.cells.join()===key||x.cells.join()===rev));
+    if(!hit){buzz('bad');return}hit.f=nfound();save();build();toast(hit.w);buzz('ok');
+    if(nfound()===W.words.length){W.done=true;save();buzz('win');const s=LS.get('wsstats',{w:0});s.w++;LS.set('wsstats',s);
+      later(()=>endModal('All found!',`${W.theme} · ${cap(W.diff)} in ${fmt(W.time)}.`,()=>{W=wsGen(W.theme,W.diff);save();build()}),500)}}
+  const cellAt=e=>{const el=document.elementFromPoint(e.clientX,e.clientY);const c=el&&el.closest&&el.closest('.wc');return c?+c.dataset.i:-1};
+  wb.addEventListener('pointerdown',e=>{const i=cellAt(e);if(i<0||W.done)return;e.preventDefault();start=i;line=[i];buzz('tap');try{wb.setPointerCapture(e.pointerId)}catch(_){}paint()});
+  wb.addEventListener('pointermove',e=>{if(start<0)return;const i=cellAt(e);if(i<0)return;const L=lineOf(start,i);if(L&&L.length!==line.length){line=L;paint()}});
+  const up=()=>{if(start<0)return;if(line.length===1){if(anchor>=0&&anchor!==start){check(lineOf(anchor,start));anchor=-1}else anchor=anchor===start?-1:start}else{check(line);anchor=-1}start=-1;line=[];paint()};
+  wb.addEventListener('pointerup',up);wb.addEventListener('pointercancel',up);
+  wd.onclick=e=>{const b=e.target.closest('button');if(!b)return;W=wsGen(W.theme,b.dataset.d);save();build()};
+  wt.onchange=()=>{W=wsGen(wt.value,W.diff);save();build()};
+  const tm=setInterval(()=>{if(!W.done&&!document.hidden&&modal.hidden){W.time++;meta();if(W.time%5===0)save()}},1000);
+  cleanup=()=>{clearInterval(tm);save()};build();
+}
+
+/* ---------- WORDLE ---------- */
+const WORDS='about above actor acute adapt adieu admit adopt adult after again agent agree ahead alarm album alert alien alike alive allow alone along alter amber amend among angel anger angle angry apart apple apply arena argue arise armor aroma arose arrow aside asset audio audit avoid awake award aware awful bacon badge bagel baker basic basin batch beach beard beast begin being belly below bench berry birth black blade blame bland blank blast blaze bleak blend bless blind blink block bloom blown board boast bonus boost booth bound brain brake brand brave bread break breed brick bride brief bring brisk broad broke brook broom brown brush build built bunch burst buyer cabin cable camel candy canoe cargo carry catch cater cause cedar chain chair chalk champ charm chart chase cheap check cheek cheer chess chest chick chief child chili chill choir chord civic claim clash class clean clear clerk click cliff climb clock close cloth cloud clown coach coast cocoa color comet comic coral couch count court cover crack craft crane crash crate crawl crazy cream creek crisp crowd crown crude crumb crush crust cubic curve cycle daily dairy daisy dance dealt debut decay delay delta dense depth diary dirty disco ditch dizzy dodge doubt dough draft drain drama drank drawn dream dress dried drift drill drink drive drone eager eagle early earth easel eaten eight elbow elder elect elite email empty enjoy enter entry equal error essay event every exact exist extra fable faint fairy faith false fancy feast fence ferry fetch fever field fiery fifth fifty fight final flame flash fleet float flock flood floor flour fluid flute focus foggy force forge forth forty forum found frame fresh fried frost fruit fully funny fuzzy gauge ghost giant given glass gleam globe glory glove grace grade grain grand grant grape graph grasp grass grave gravy great green greet grill grind groan group grove growl guard guess guest guide habit happy harsh haste haunt heart heavy hedge hello hinge hobby honey honor horse hotel hound house hover human humid humor hurry icing ideal image index inner input irate irony issue ivory jelly jewel joint jolly judge juice juicy kayak knack kneel knife knock known koala label labor large laser later laugh layer learn lease least leave ledge legal lemon level lever light limit linen liver llama lobby local lodge logic loose lover lower loyal lucky lunar lunch magic major maker mango manor maple march marsh match mayor medal media melon mercy merit merry metal meter might minor minus model moist money month moose moral motor mount mouse mouth movie muddy mural music naive nerve never newly niche night noble noise north novel nurse nylon ocean offer often olive onion opera orbit order organ other otter ought ounce outer owner paint panda panel panic paper party pasta paste patch pause peace peach pearl pedal penny perch phase phone photo piano piece pilot pinch pitch pixel pizza place plain plane plant plate plaza plead pluck plumb plume plush point polar porch pouch pound power press price pride prime print prior prism prize probe proof proud prove pulse punch pupil puppy purse queen query quest quick quiet quilt quirk quite quota quote radar radio rainy raise rally ranch range rapid ratio raven reach react ready realm rebel refer reign relax relay renew reply rhyme ridge right rigid rinse ripen risky rival river roast robin robot rocky rodeo rough round route royal rugby ruler rural rusty saint salad salon salsa sandy sauce scale scarf scene scent scone scoop scope score scout scrap screw sense serve setup seven shade shake shall shape share shark sharp sheep sheet shelf shell shift shine shiny shirt shock shore short shout shrug sight silly since sixth skate skill skirt slate sleep slice slide slope smart smell smile smoke snack snake sneak solar solid solve sonic sorry sound south space spare spark speak spear speed spell spend spice spicy spike spill spine spoke spoon sport spray squad stack staff stage stain stair stake stale stamp stand stare start state steak steam steel steep stick still sting stock stone stood stool store storm story stove straw strip stuck study stuff style sugar suite sunny super surge swamp swear sweat sweep sweet swift swing sword syrup table taken tasty teach tears teeth tempo thank theme there thick thing think third thorn those three threw throw thumb tiger tight timer tired title toast today token topic torch total touch tough towel tower trace track trade trail train trait treat trend trial tribe trick tried troop truck truly trunk trust truth tulip tutor twice twist ultra uncle under union unite unity until upper upset urban usage usual vague valid value valve vapor vault venue verse video vigor vinyl viola visit vital vivid vocal voice voter wagon waist waste watch water weary weave wedge weigh weird whale wheat wheel where which while whisk white whole width witch woman world worry worse worst worth would wound woven wrist write wrong yacht yeast yield young youth zebra zesty'.split(' ').filter(w=>/^[a-z]{5}$/.test(w));
+const EXTRA='abuse death enemy toxic tumor virus widow roate soare tares rates aisle lines liner snore tones notes saner oater caret carte tread';
+const VALID=new Set([...WORDS,...EXTRA.split(' ')]);
+const newW=()=>({ans:WORDS[rand(WORDS.length)],rows:[],cur:'',done:false,won:false});
+function evalW(g,a){const r=Array(5).fill('x'),cnt={};for(let i=0;i<5;i++){if(g[i]===a[i])r[i]='g';else cnt[a[i]]=(cnt[a[i]]||0)+1}for(let i=0;i<5;i++)if(r[i]!=='g'&&cnt[g[i]]>0){r[i]='y';cnt[g[i]]--}return r}
+function Wordle(){
+  let G=LS.get('wordle',null);if(!G||!G.ans)G=newW();
+  let busy=false;
+  const save=()=>LS.set('wordle',G),getSt=()=>LS.get('wdstats',{p:0,w:0,s:0,m:0,d:[0,0,0,0,0,0]});
+  const fresh=()=>{G=newW();save();drawAll()};
+  setTop('Wordle',()=>{if(G.done||!G.rows.length)return fresh();
+    showModal(`<h2>Give up?</h2><p>Starting a new word ends this one and counts as a loss.</p><button class="btn" data-m="y">New word</button><button class="btn alt" data-m="n">Keep playing</button>`,{y:()=>{closeModal();toast(G.ans.toUpperCase(),2200);const s=getSt();s.p++;s.s=0;LS.set('wdstats',s);fresh()},n:closeModal})});
+  app.innerHTML=`<div class="wg" id="wg" aria-label="Guesses"></div><div id="wdn"></div><div class="kb" id="kb"></div>`;
+  const wg=$('#wg'),kb=$('#kb'),wdn=$('#wdn');
+  function drawBoard(pop=-1){let h='';for(let r=0;r<6;r++){h+='<div class="wr">';
+      if(r<G.rows.length){const ev=evalW(G.rows[r],G.ans);for(let i=0;i<5;i++)h+=`<div class="t ${ev[i]}">${G.rows[r][i]}</div>`}
+      else if(r===G.rows.length&&!G.done){for(let i=0;i<5;i++){const ch=G.cur[i]||'';h+=`<div class="t${ch?' fill':''}${i===pop?' pop':''}">${ch}</div>`}}
+      else for(let i=0;i<5;i++)h+='<div class="t"></div>';h+='</div>'}wg.innerHTML=h;
+    wdn.innerHTML=G.done?`<div class="done"><div><span class="meta">${G.won?'Solved in '+G.rows.length:'The word was'}</span><br><b>${G.ans.toUpperCase()}</b></div><button id="nw">New word</button></div>`:'';
+    const nw=$('#nw');if(nw)nw.onclick=fresh}
+  function drawKeys(){const ks={},rank={g:3,y:2,x:1};G.rows.forEach(w=>{const ev=evalW(w,G.ans);[...w].forEach((c,i)=>{if(!ks[c]||rank[ev[i]]>rank[ks[c]])ks[c]=ev[i]})});
+    kb.innerHTML=['qwertyuiop','asdfghjkl','+zxcvbnm-'].map(r=>`<div class="kr">${[...r].map(c=>c==='+'?'<button class="k w" data-k="enter">Enter</button>':c==='-'?'<button class="k w" data-k="del" aria-label="Delete">⌫</button>':`<button class="k ${ks[c]||''}" data-k="${c}">${c}</button>`).join('')}</div>`).join('')}
+  const drawAll=()=>{drawBoard();drawKeys()},rowEl=()=>wg.children[G.rows.length];
+  function shake(){const r=rowEl();if(!r)return;r.classList.remove('shake');void r.offsetWidth;r.classList.add('shake');buzz('bad')}
+  function type(c){if(busy||G.done||G.cur.length>=5)return;G.cur+=c;drawBoard(G.cur.length-1)}
+  function del(){if(busy||G.done||!G.cur)return;G.cur=G.cur.slice(0,-1);drawBoard()}
+  function submit(){if(busy||G.done)return;
+    if(G.cur.length<5){shake();return toast('Not enough letters')}
+    if(!VALID.has(G.cur)){shake();return toast('Not in word list')}
+    const row=rowEl(),g=G.cur,ev=evalW(g,G.ans);G.rows.push(g);G.cur='';
+    if(g===G.ans){G.done=true;G.won=true}else if(G.rows.length===6)G.done=true;
+    if(G.done){const s=getSt();s.p++;if(G.won){s.w++;s.s++;s.m=Math.max(s.m,s.s);s.d[G.rows.length-1]++}else s.s=0;LS.set('wdstats',s)}
+    save();busy=true;const tiles=[...row.children],step=RM?0:280;
+    tiles.forEach((t,i)=>setTimeout(()=>{if(!RM)t.classList.add('flip');setTimeout(()=>{t.classList.remove('fill');t.classList.add(ev[i])},RM?0:250)},i*step));
+    setTimeout(()=>{busy=false;drawAll();if(G.done)finish()},step*5+300)}
+  function finish(){if(G.won){buzz('win');toast(['Genius!','Magnificent!','Impressive!','Splendid!','Great!','Phew!'][G.rows.length-1])}else{buzz('bad');toast(G.ans.toUpperCase(),2600)}later(stats,1200)}
+  function stats(){const s=getSt(),mx=Math.max(1,...s.d);
+    const grid=G.rows.map(w=>evalW(w,G.ans).map(e=>e==='g'?'🟩':e==='y'?'🟨':'⬛').join('')).join('\n');
+    showModal(`<h2>${G.won?'Nice!':'So close'}</h2><div class="stats"><div><b>${s.p}</b><span>Played</span></div><div><b>${s.p?Math.round(s.w/s.p*100):0}</b><span>Win %</span></div><div><b>${s.s}</b><span>Streak</span></div><div><b>${s.m}</b><span>Best</span></div></div><div class="dist">${s.d.map((n,i)=>`<div>${i+1}<i class="${G.won&&G.rows.length===i+1?'now':''}" style="width:${Math.max(8,n/mx*100)}%">${n}</i></div>`).join('')}</div><button class="btn" data-m="n">New word</button><button class="btn alt" data-m="c">Copy result</button>`,
+      {n:()=>{closeModal();fresh()},c:()=>{const txt=`Travel Wordle ${G.won?G.rows.length:'X'}/6\n${grid}`;try{navigator.clipboard.writeText(txt).then(()=>toast('Copied'),()=>toast('Copy not allowed here'))}catch(e){toast('Copy not allowed here')}}})}
+  kb.onclick=e=>{const b=e.target.closest('.k');if(!b)return;const k=b.dataset.k;if(k==='enter')submit();else if(k==='del')del();else type(k)};
+  onKey=e=>{if(e.key==='Enter'){e.preventDefault();submit()}else if(e.key==='Backspace')del();else if(/^[a-z]$/i.test(e.key))type(e.key.toLowerCase())};
+  cleanup=()=>save();drawAll();
+}
+
+/* ---------- CAPITALS QUIZ ---------- */
+const CAPS='France|Paris;Spain|Madrid;Portugal|Lisbon;Italy|Rome;Germany|Berlin;Austria|Vienna;Poland|Warsaw;Czechia|Prague;Hungary|Budapest;Greece|Athens;Romania|Bucharest;Bulgaria|Sofia;Croatia|Zagreb;Serbia|Belgrade;Ukraine|Kyiv;Russia|Moscow;Ireland|Dublin;United Kingdom|London;Belgium|Brussels;Netherlands|Amsterdam;Denmark|Copenhagen;Norway|Oslo;Sweden|Stockholm;Finland|Helsinki;Iceland|Reykjavík;Estonia|Tallinn;Latvia|Riga;Lithuania|Vilnius;Slovakia|Bratislava;Slovenia|Ljubljana;Georgia|Tbilisi;Armenia|Yerevan;Azerbaijan|Baku;Turkey|Ankara;Egypt|Cairo;Morocco|Rabat;Algeria|Algiers;Tunisia|Tunis;Kenya|Nairobi;Ethiopia|Addis Ababa;Ghana|Accra;Nigeria|Abuja;Senegal|Dakar;Uganda|Kampala;Rwanda|Kigali;Zambia|Lusaka;Zimbabwe|Harare;Madagascar|Antananarivo;Tanzania|Dodoma;Japan|Tokyo;China|Beijing;South Korea|Seoul;Mongolia|Ulaanbaatar;India|New Delhi;Pakistan|Islamabad;Bangladesh|Dhaka;Nepal|Kathmandu;Thailand|Bangkok;Vietnam|Hanoi;Cambodia|Phnom Penh;Laos|Vientiane;Malaysia|Kuala Lumpur;Philippines|Manila;Saudi Arabia|Riyadh;United Arab Emirates|Abu Dhabi;Qatar|Doha;Jordan|Amman;Lebanon|Beirut;Iraq|Baghdad;Iran|Tehran;Afghanistan|Kabul;Uzbekistan|Tashkent;Kazakhstan|Astana;Australia|Canberra;New Zealand|Wellington;Fiji|Suva;Papua New Guinea|Port Moresby;Canada|Ottawa;United States|Washington, D.C.;Mexico|Mexico City;Cuba|Havana;Jamaica|Kingston;Costa Rica|San José;Panama|Panama City;Colombia|Bogotá;Venezuela|Caracas;Ecuador|Quito;Peru|Lima;Brazil|Brasília;Argentina|Buenos Aires;Chile|Santiago;Uruguay|Montevideo;Paraguay|Asunción'.split(';').map(s=>s.split('|'));
+function Quiz(){
+  let mode=LS.get('qmode','cap'),Q;
+  setTop('Capitals Quiz',()=>start());
+  app.innerHTML=`<div class="row"><div class="seg" id="qm"><button data-q="cap">Name the capital</button><button data-q="cty">Name the country</button></div><div class="meta" id="qs"></div></div><div class="qp" id="qp"></div><div class="opts" id="qo"></div>`;
+  const qp=$('#qp'),qo=$('#qo'),qs=$('#qs'),qm=$('#qm');
+  function start(){const k=mode==='cap'?1:0;Q={i:0,score:0,lock:false,qs:shuffle(CAPS.slice()).slice(0,10).map(p=>{const right=p[k],wrong=shuffle(CAPS.filter(x=>x[k]!==right).map(x=>x[k])).slice(0,3);return{prompt:p[1-k],right,opts:shuffle([right,...wrong])}})};draw()}
+  function draw(){const q=Q.qs[Q.i];qm.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.q===mode));
+    qs.textContent=`${Q.i+1} of 10 · ${Q.score} right`;
+    qp.innerHTML=`<span>${mode==='cap'?'What is the capital of':'Which country has the capital'}</span><b>${q.prompt}</b>`;
+    qo.innerHTML=q.opts.map((o,i)=>`<button class="opt" data-i="${i}" data-quiet="1">${o}</button>`).join('')}
+  qo.onclick=e=>{const b=e.target.closest('.opt');if(!b||Q.lock)return;Q.lock=true;const q=Q.qs[Q.i],pick=q.opts[+b.dataset.i];
+    qo.querySelectorAll('.opt').forEach((x,i)=>{if(q.opts[i]===q.right)x.classList.add('ok')});
+    if(pick===q.right){Q.score++;buzz('ok')}else{b.classList.add('no');buzz('bad')}
+    qs.textContent=`${Q.i+1} of 10 · ${Q.score} right`;
+    later(()=>{Q.lock=false;if(++Q.i<10)return draw();const best=Math.max(LS.get('qbest',0),Q.score);LS.set('qbest',best);if(Q.score>=8)buzz('win');
+      endModal(Q.score>=8?'Globetrotter!':Q.score>=5?'Nice flying':'Keep exploring',`You got ${Q.score} of 10. Best: ${best}/10.`,start)},pick===q.right?700:1300)};
+  qm.onclick=e=>{const b=e.target.closest('button');if(!b)return;mode=b.dataset.q;LS.set('qmode',mode);start()};
+  start();
+}
+
+/* ---------- TWO PLAYER SHARED ---------- */
+const names=m=>m==='cpu'?['You','Phone']:['Player 1','Player 2'];
+const scoreBar=(m,c1,c2,s1,s2,turn,over)=>{const n=names(m);return`<div class="score"><div class="pl${!over&&turn===1?' turn':''}"><i class="dot" style="background:${c1}"></i><span>${n[0]}</span><b>${s1}</b></div><div class="pl${!over&&turn===2?' turn':''}"><i class="dot" style="background:${c2}"></i><span>${n[1]}</span><b>${s2}</b></div></div>`};
+const modeSeg=m=>`<div class="seg" id="mode"><button data-m2="2p" class="${m==='2p'?'on':''}">2 players</button><button data-m2="cpu" class="${m==='cpu'?'on':''}">vs Phone</button></div>`;
+function bindMode(get,set){$('#mode').onclick=e=>{const b=e.target.closest('button');if(!b||b.dataset.m2===get())return;set(b.dataset.m2)}}
+const turnTxt=(m,t)=>m==='cpu'&&t===1?'Your turn':`${names(m)[t-1]}’s turn`;
+const winText=(m,p)=>m==='cpu'?(p===1?'You win!':'Phone wins'):`Player ${p} wins!`;
+
+/* ---------- TIC-TAC-TOE ---------- */
+const L3=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+const w3=b=>{for(const l of L3)if(b[l[0]]&&b[l[0]]===b[l[1]]&&b[l[0]]===b[l[2]])return l;return null};
+function mm(b,turn){const w=w3(b);if(w)return b[w[0]]===2?10:-10;if(b.every(Boolean))return 0;let best=turn===2?-99:99;for(let i=0;i<9;i++)if(!b[i]){b[i]=turn;const s=mm(b,3-turn);b[i]=0;best=turn===2?Math.max(best,s):Math.min(best,s)}return best}
+function TTT(){
+  let T=LS.get('ttt',null);if(!T||!T.b)T={b:Array(9).fill(0),turn:1,first:1,mode:'cpu',sc:[0,0,0],over:false,win:null};
+  const save=()=>LS.set('ttt',T);
+  const round=()=>{T.first=3-T.first;T.b=Array(9).fill(0);T.turn=T.first;T.over=false;T.win=null;save();draw();cpu()};
+  setTop('Tic-Tac-Toe',round);
+  const XS='<svg viewBox="0 0 40 40" style="stroke:var(--p1)"><path d="M10 10l20 20M30 10 10 30"/></svg>',OS='<svg viewBox="0 0 40 40" style="stroke:var(--p2)"><circle cx="20" cy="20" r="12"/></svg>';
+  function draw(){const n=names(T.mode);
+    app.innerHTML=`<div class="row">${modeSeg(T.mode)}<span class="meta">Draws ${T.sc[2]}</span></div>${scoreBar(T.mode,'var(--p1)','var(--p2)',T.sc[0],T.sc[1],T.turn,T.over)}
+    <div class="status">${T.over?(T.win?winText(T.mode,T.b[T.win[0]]):'It’s a draw'):`${turnTxt(T.mode,T.turn)} (${T.turn===1?'X':'O'})`}</div>
+    <div class="b3" id="b3">${T.b.map((v,i)=>`<button class="t3${T.win&&T.win.includes(i)?' win':''}" data-i="${i}" aria-label="Square ${i+1}${v?(v===1?' X':' O'):''}">${v===1?XS:v===2?OS:''}</button>`).join('')}</div>
+    ${T.over?'<button class="btn" id="nx">Next round</button>':''}`;
+    bindMode(()=>T.mode,m=>{T.mode=m;T.sc=[0,0,0];T.first=2;round()});
+    $('#b3').onclick=e=>{const c=e.target.closest('.t3');if(!c)return;if(T.mode==='cpu'&&T.turn===2)return;move(+c.dataset.i)};
+    const nx=$('#nx');if(nx)nx.onclick=round}
+  function move(i){if(T.over||T.b[i])return;T.b[i]=T.turn;T.win=w3(T.b);
+    if(T.win){T.over=true;T.sc[T.b[i]-1]++;buzz(T.mode==='cpu'&&T.b[i]===2?'bad':'win')}else if(T.b.every(Boolean)){T.over=true;T.sc[2]++;buzz('ok')}else T.turn=3-T.turn;
+    save();draw();cpu()}
+  function cpu(){if(T.mode!=='cpu'||T.over||T.turn!==2)return;later(()=>{const open=T.b.map((v,i)=>v?-1:i).filter(i=>i>=0);let pick;
+    if(Math.random()<.18||open.length===9)pick=open[rand(open.length)];
+    else{let best=-99;for(const i of shuffle(open)){T.b[i]=2;const s=mm(T.b,1);T.b[i]=0;if(s>best){best=s;pick=i}}}
+    move(pick)},450)}
+  draw();cpu();
+}
+
+/* ---------- CONNECT FOUR ---------- */
+const R4=6,C4=7;
+const dropAt=(b,c)=>{for(let r=R4-1;r>=0;r--)if(!b[r*C4+c])return r*C4+c;return -1};
+function four(b,i){const p=b[i];if(!p)return null;const r=i/C4|0,c=i%C4;for(const[dr,dc]of[[0,1],[1,0],[1,1],[1,-1]]){const cells=[i];for(const s of[1,-1]){let rr=r+dr*s,cc=c+dc*s;while(rr>=0&&rr<R4&&cc>=0&&cc<C4&&b[rr*C4+cc]===p){cells.push(rr*C4+cc);rr+=dr*s;cc+=dc*s}}if(cells.length>=4)return cells}return null}
+function runs(b,i){const p=b[i],r=i/C4|0,c=i%C4;let s=0;for(const[dr,dc]of[[0,1],[1,0],[1,1],[1,-1]]){let n=1,open=0;for(const sg of[1,-1]){let rr=r+dr*sg,cc=c+dc*sg;while(rr>=0&&rr<R4&&cc>=0&&cc<C4&&b[rr*C4+cc]===p){n++;rr+=dr*sg;cc+=dc*sg}if(rr>=0&&rr<R4&&cc>=0&&cc<C4&&!b[rr*C4+cc])open++}if(open)s+=n*n*open}return s}
+function cpu4(b){const cols=[...Array(C4).keys()].filter(c=>dropAt(b,c)>=0);
+  for(const p of[2,1])for(const c of cols){const i=dropAt(b,c);b[i]=p;const w=four(b,i);b[i]=0;if(w)return c}
+  let best=-1e9,pick=cols[0];
+  for(const c of cols){const i=dropAt(b,c);b[i]=2;let s=runs(b,i)+(3-Math.abs(3-c))*4+Math.random()*3;
+    for(const c2 of cols){const j=dropAt(b,c2);if(j<0)continue;b[j]=1;if(four(b,j))s-=1000;b[j]=0}
+    b[i]=1;s+=runs(b,i)*.6;b[i]=2;b[i]=0;if(s>best){best=s;pick=c}}
+  return pick}
+function Four(){
+  let F=LS.get('four',null);if(!F||!F.b)F={b:Array(R4*C4).fill(0),turn:1,first:1,mode:'cpu',sc:[0,0,0],over:false,win:null,last:-1};
+  const save=()=>LS.set('four',F);let busy=false;
+  const round=()=>{F.first=3-F.first;F.b=Array(R4*C4).fill(0);F.turn=F.first;F.over=false;F.win=null;F.last=-1;save();draw();cpu()};
+  setTop('Connect Four',round);
+  function draw(){const n=names(F.mode);
+    app.innerHTML=`<div class="row">${modeSeg(F.mode)}<span class="meta">Draws ${F.sc[2]}</span></div>${scoreBar(F.mode,'var(--p1)','var(--sun)',F.sc[0],F.sc[1],F.turn,F.over)}
+    <div class="status">${F.over?(F.win?winText(F.mode,F.b[F.win[0]]):'It’s a draw'):`${turnTxt(F.mode,F.turn)}`}</div>
+    <div class="c4" id="c4">${F.b.map((v,i)=>`<button class="h${F.win&&F.win.includes(i)?' win':''}" data-c="${i%C4}" aria-label="Column ${i%C4+1}">${v?`<i class="dk ${v===1?'a':'b'}${i===F.last?' new':''}" style="--r:${(i/C4|0)+1}"></i>`:''}</button>`).join('')}</div>
+    ${F.over?'<button class="btn" id="nx">Next round</button>':'<p class="hint">Tap a column to drop a disc.</p>'}`;
+    bindMode(()=>F.mode,m=>{F.mode=m;F.sc=[0,0,0];F.first=2;round()});
+    $('#c4').onclick=e=>{const h=e.target.closest('.h');if(!h||busy||(F.mode==='cpu'&&F.turn===2))return;move(+h.dataset.c)};
+    const nx=$('#nx');if(nx)nx.onclick=round}
+  function move(c){if(F.over)return;const i=dropAt(F.b,c);if(i<0){buzz('bad');return toast('That column is full')}
+    F.b[i]=F.turn;F.last=i;F.win=four(F.b,i);
+    if(F.win){F.over=true;F.sc[F.turn-1]++;buzz(F.mode==='cpu'&&F.turn===2?'bad':'win')}else if(F.b.every(Boolean)){F.over=true;F.sc[2]++}else F.turn=3-F.turn;
+    save();draw();cpu()}
+  function cpu(){if(F.mode!=='cpu'||F.over||F.turn!==2)return;busy=true;later(()=>{busy=false;move(cpu4(F.b))},550)}
+  draw();cpu();
+}
+
+/* ---------- DOTS & BOXES ---------- */
+const DN=4,DS=68,DP=22,DW=DN*DS+DP*2;
+function Dots(){
+  const fresh=(mode,sc,first)=>({mode,H:Array((DN+1)*DN).fill(0),V:Array(DN*(DN+1)).fill(0),B:Array(DN*DN).fill(0),turn:first,first,sc,over:false});
+  let D=LS.get('dots',null);if(!D||!D.H)D=fresh('cpu',[0,0,0],1);
+  const save=()=>LS.set('dots',D);
+  const round=()=>{D=fresh(D.mode,D.sc,3-D.first);save();draw();cpu()};
+  setTop('Dots & Boxes',round);
+  const sides=b=>{const r=b/DN|0,c=b%DN;return!!D.H[r*DN+c]+!!D.H[(r+1)*DN+c]+!!D.V[r*(DN+1)+c]+!!D.V[r*(DN+1)+c+1]};
+  const adj=(t,i)=>{const o=[];if(t==='h'){const r=i/DN|0,c=i%DN;if(r>0)o.push((r-1)*DN+c);if(r<DN)o.push(r*DN+c)}else{const r=i/(DN+1)|0,c=i%(DN+1);if(c>0)o.push(r*DN+c-1);if(c<DN)o.push(r*DN+c)}return o};
+  const cnt=p=>D.B.filter(x=>x===p).length;
+  function draw(){const n=names(D.mode);let s='';
+    D.B.forEach((o,b)=>{if(o)s+=`<rect class="bx ${o===1?'a':'b'}" x="${DP+(b%DN)*DS}" y="${DP+(b/DN|0)*DS}" width="${DS}" height="${DS}" rx="6"/>`});
+    D.H.forEach((o,i)=>{const r=i/DN|0,c=i%DN,x1=DP+c*DS,y=DP+r*DS;s+=`<line class="ln${o?o===1?' a':' b':''}" x1="${x1+6}" y1="${y}" x2="${x1+DS-6}" y2="${y}"/>${o?'':`<line class="hit" data-t="h" data-i="${i}" x1="${x1+8}" y1="${y}" x2="${x1+DS-8}" y2="${y}"/>`}`});
+    D.V.forEach((o,i)=>{const r=i/(DN+1)|0,c=i%(DN+1),x=DP+c*DS,y1=DP+r*DS;s+=`<line class="ln${o?o===1?' a':' b':''}" x1="${x}" y1="${y1+6}" x2="${x}" y2="${y1+DS-6}"/>${o?'':`<line class="hit" data-t="v" data-i="${i}" x1="${x}" y1="${y1+8}" x2="${x}" y2="${y1+DS-8}"/>`}`});
+    for(let r=0;r<=DN;r++)for(let c=0;c<=DN;c++)s+=`<circle cx="${DP+c*DS}" cy="${DP+r*DS}" r="6"/>`;
+    const a=cnt(1),b2=cnt(2);
+    app.innerHTML=`<div class="row">${modeSeg(D.mode)}<span class="meta">Games ${D.sc[0]}–${D.sc[1]}</span></div>${scoreBar(D.mode,'var(--p1)','var(--p2)',a,b2,D.turn,D.over)}
+    <div class="status">${D.over?(a===b2?'It’s a tie':winText(D.mode,a>b2?1:2)):`${turnTxt(D.mode,D.turn)}`}</div>
+    <svg class="db" id="db" viewBox="0 0 ${DW} ${DW}" aria-label="Dots and boxes board">${s}</svg>
+    ${D.over?'<button class="btn" id="nx">Next round</button>':'<p class="hint">Tap between two dots to draw a line. Close a box to go again.</p>'}`;
+    bindMode(()=>D.mode,m=>{D.mode=m;D.sc=[0,0,0];D.first=2;round()});
+    $('#db').onclick=e=>{const h=e.target.closest('.hit');if(!h||(D.mode==='cpu'&&D.turn===2))return;buzz('tap');play(h.dataset.t,+h.dataset.i)};
+    const nx=$('#nx');if(nx)nx.onclick=round}
+  function play(t,i){const arr=t==='h'?D.H:D.V;if(D.over||arr[i])return;arr[i]=D.turn;let got=0;
+    for(const b of adj(t,i))if(!D.B[b]&&sides(b)===4){D.B[b]=D.turn;got++}
+    if(got)buzz('ok');else D.turn=3-D.turn;
+    if(D.B.every(Boolean)){D.over=true;const a=cnt(1),b=cnt(2);if(a!==b)D.sc[a>b?0:1]++;else D.sc[2]++;buzz(D.mode==='cpu'&&b>a?'bad':'win')}
+    save();draw();cpu()}
+  function pick(){const mv=[];D.H.forEach((o,i)=>{if(!o)mv.push(['h',i])});D.V.forEach((o,i)=>{if(!o)mv.push(['v',i])});
+    const take=mv.filter(([t,i])=>adj(t,i).some(b=>sides(b)===3));if(take.length)return take[rand(take.length)];
+    const safe=mv.filter(([t,i])=>adj(t,i).every(b=>sides(b)<2));if(safe.length)return safe[rand(safe.length)];
+    let best=99,o=[];for(const m of mv){const k=adj(m[0],m[1]).filter(b=>sides(b)===2).length;if(k<best){best=k;o=[m]}else if(k===best)o.push(m)}return o[rand(o.length)]}
+  function cpu(){if(D.mode!=='cpu'||D.over||D.turn!==2)return;later(()=>{const m=pick();play(m[0],m[1])},500)}
+  draw();cpu();
+}
+
+/* ---------- FLIGHT TRACKER ---------- */
+let TZS=[];try{TZS=Intl.supportedValuesOf('timeZone')}catch(e){}
+if(!TZS.length)TZS=['America/Los_Angeles','America/Denver','America/Chicago','America/New_York','America/Anchorage','Pacific/Honolulu','Europe/London','Europe/Paris','Europe/Berlin','Asia/Dubai','Asia/Kolkata','Asia/Tokyo','Asia/Shanghai','Australia/Sydney','UTC'];
+if(!TZS.includes(LTZ))TZS.push(LTZ);
+const toInput=ms=>{const d=new Date(ms),p=n=>String(n).padStart(2,'0');return`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`};
+function Flight(){
+  let F=LS.get('flight',null);if(!F)F={from:'',to:'',dep:Math.round(Date.now()/300000)*300000,dur:180,tz:LTZ,remind:false,every:60,last:0,set:false};
+  const save=()=>LS.set('flight',F);
+  setTop('Flight Tracker',()=>{showModal(`<h2>Clear flight?</h2><p>This removes your flight details.</p><button class="btn" data-m="y">Clear</button><button class="btn alt" data-m="n">Keep</button>`,{y:()=>{closeModal();try{localStorage.removeItem('tg_flight')}catch(e){}route()},n:closeModal})},'Clear');
+  app.innerHTML=`<div class="fcard"><div id="farc"></div><div class="big" id="fbig"></div><div class="sub" id="fsub"></div><div class="bar"><i id="fbar"></i></div></div>
+  <form class="form" id="ff" autocomplete="off">
+   <div class="two"><label>From<input id="ffrom" maxlength="4" placeholder="SLC" autocapitalize="characters"></label><label>To<input id="fto" maxlength="4" placeholder="JFK" autocapitalize="characters"></label></div>
+   <label>Departure (your time now)<input type="datetime-local" id="fdep"></label>
+   <div class="two"><label>Flight hours<input type="number" id="fh" min="0" max="22" inputmode="numeric"></label><label>Minutes<input type="number" id="fmn" min="0" max="59" inputmode="numeric"></label></div>
+   <label>Destination time zone<select id="ftz">${TZS.map(z=>`<option value="${z}">${z.replace(/_/g,' ').replace('/',' / ')}</option>`).join('')}</select></label>
+   <label class="sw"><input type="checkbox" id="frem"> Stretch and water reminders <select id="fev" aria-label="Reminder interval"><option value="45">every 45 min</option><option value="60">every hour</option><option value="90">every 90 min</option></select></label>
+  </form>
+  <dl class="facts" id="facts"></dl><p class="hint">Uses your phone’s clock, so it keeps working in airplane mode. Reminders show while the app is open.</p>`;
+  const v=id=>$('#'+id);
+  v('ffrom').value=F.from;v('fto').value=F.to;v('fdep').value=toInput(F.dep);v('fh').value=F.dur/60|0;v('fmn').value=F.dur%60;v('ftz').value=F.tz;v('frem').checked=F.remind;v('fev').value=F.every;
+  function upd(){const now=Date.now(),f=fi(F,now);
+    v('farc').innerHTML=arcSVG(f.p,esc(F.from||'FROM'),esc(F.to||'TO'));
+    v('fbig').textContent=!F.set?'Enter your flight':f.s==='pre'?`Departs in ${hm(f.until)}`:f.s==='air'?`${hm(f.left)} to go`:'Landed';
+    v('fsub').textContent=f.s==='air'?`${Math.round(f.p*100)}% of the way · ${hm(f.el)} flown`:f.s==='pre'?`${hm(F.dur*60000)} flight`:F.set?'Welcome to your destination':'Departure time and length are all it needs';
+    v('fbar').style.width=(f.p*100).toFixed(1)+'%';
+    const tzn=F.tz.split('/').pop().replace(/_/g,' ');
+    v('facts').innerHTML=[['Lands (your time)',clock(f.arr,LTZ)],[`Lands (${tzn})`,clock(f.arr,F.tz)],[`Now in ${tzn}`,clock(now,F.tz)],['Now here',clock(now,LTZ)]].map(([a,b])=>`<div><dt>${esc(a)}</dt><dd>${esc(b)}</dd></div>`).join('')}
+  v('ff').addEventListener('submit',e=>e.preventDefault());
+  v('ff').addEventListener('input',()=>{F.from=v('ffrom').value.toUpperCase().slice(0,4);F.to=v('fto').value.toUpperCase().slice(0,4);
+    const d=new Date(v('fdep').value).getTime();if(!isNaN(d))F.dep=d;
+    F.dur=Math.max(1,Math.min(22,+v('fh').value||0)*60+Math.min(59,+v('fmn').value||0));F.tz=v('ftz').value;F.every=+v('fev').value;
+    const r=v('frem').checked;if(r&&!F.remind)F.last=Date.now();F.remind=r;F.set=true;save();upd()});
+  v('frem').addEventListener('change',()=>{if(v('frem').checked)toast(`Reminder every ${F.every} min while you’re in the air`,2400)});
+  const ti=setInterval(upd,15000);cleanup=()=>clearInterval(ti);upd();
+}
+
+/* ---------- CHECKLIST ---------- */
+const PACK_DEF=['Passport or ID','Boarding pass','Phone charger','Power bank (in carry-on)','Headphones','Downloaded shows and music','Empty water bottle','Snacks','Neck pillow','Warm layer or socks','Pen for customs forms','Medications','Gum for ear pressure','Chargers out of checked bag'];
+function Pack(){
+  let P=LS.get('pack',null);if(!P)P=PACK_DEF.map(t=>({t,on:false}));
+  const save=()=>LS.set('pack',P);
+  setTop('Checklist',()=>{showModal(`<h2>Reset list?</h2><p>Uncheck everything, or go back to the starter list.</p><button class="btn" data-m="u">Uncheck all</button><button class="btn alt" data-m="d">Starter list</button><button class="btn alt" data-m="n">Cancel</button>`,{u:()=>{closeModal();P.forEach(x=>x.on=false);save();draw()},d:()=>{closeModal();P=PACK_DEF.map(t=>({t,on:false}));save();draw()},n:closeModal})},'Reset');
+  app.innerHTML=`<div class="prog" id="pg"></div><div id="pl"></div><form class="add" id="pa"><input id="pi" placeholder="Add an item" maxlength="60" aria-label="New item"><button>Add</button></form>`;
+  const pl=$('#pl'),pg=$('#pg');
+  function draw(){const n=P.filter(x=>x.on).length;pg.textContent=P.length?`${n} of ${P.length} ready${n===P.length?' · all set for takeoff':''}`:'Your list is empty';
+    pl.innerHTML=P.map((x,i)=>`<div class="ck${x.on?' on':''}"><button class="bx2" data-i="${i}" aria-pressed="${x.on}">${esc(x.t)}</button><button class="x" data-d="${i}" aria-label="Remove ${esc(x.t)}">×</button></div>`).join('')}
+  pl.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.d!=null){P.splice(+b.dataset.d,1)}else{const x=P[+b.dataset.i];x.on=!x.on;if(P.every(y=>y.on))buzz('win')}save();draw()};
+  $('#pa').onsubmit=e=>{e.preventDefault();const t=$('#pi').value.trim();if(!t)return;P.push({t,on:false});$('#pi').value='';save();draw()};
+  draw();
+}
+
+/* ---------- ROUTER ---------- */
+const ROUTES={sudoku:Sudoku,words:WordSearch,wordle:Wordle,quiz:Quiz,ttt:TTT,four:Four,dots:Dots,flight:Flight,pack:Pack};
+function route(){if(cleanup){cleanup();cleanup=null}TM.forEach(clearTimeout);TM=[];onKey=null;closeModal();(ROUTES[location.hash.slice(1)]||Home)();window.scrollTo(0,0)}
+addEventListener('hashchange',route);
+route();
+
+/* offline install (works when hosted on its own site; ignored inside the Claude viewer) */
+try{if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
+}
+</script>
+</body></html>
