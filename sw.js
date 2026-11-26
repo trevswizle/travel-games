@@ -1,5 +1,5 @@
 // Travel Games offline cache. Bump the version when you change index.html.
-const CACHE = 'travel-games-v3';
+const CACHE = 'travel-games-v4';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

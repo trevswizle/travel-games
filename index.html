@@ -335,11 +335,14 @@ sports:{n:'Sports',d:'Game day',h:12,w:'SOCCER TENNIS HOCKEY GOLF RUGBY BOXING S
 weather:{n:'Weather',d:'Check the forecast',h:212,w:'SUNNY RAINY WINDY SNOW SLEET HAIL FOGGY FROST RAINBOW TORNADO DRIZZLE HUMID BLIZZARD MONSOON CLOUDY THUNDER'}};
 const HUES=[210,38,140,330,270,12,180,95,300,60];
 const DIRS={easy:[[0,1],[1,0]],normal:[[0,1],[1,0],[1,1],[-1,1]],hard:[[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]]};
-function wsGen(theme,diff){if(!THEMES[theme])theme='plane';const N=10,dirs=DIRS[diff],g=Array(N*N).fill(''),placed=[];
-  for(const w of shuffle(THEMES[theme].w.split(' ').filter(x=>x.length<=N))){if(placed.length>=8)break;
-    for(let t=0;t<200;t++){const[dr,dc]=dirs[rand(dirs.length)],r0=rand(N),c0=rand(N),re=r0+dr*(w.length-1),ce=c0+dc*(w.length-1);if(re<0||re>=N||ce<0||ce>=N)continue;
-      const cells=[];let ok=true;for(let k=0;k<w.length;k++){const i=(r0+dr*k)*N+c0+dc*k;if(g[i]&&g[i]!==w[k]){ok=false;break}cells.push(i)}
-      if(!ok)continue;cells.forEach((i,k)=>g[i]=w[k]);placed.push({w,cells,f:-1});break}}
+function wsGen(theme,diff){if(!THEMES[theme])theme='plane';const N=10,dirs=DIRS[diff],g=Array(N*N).fill(''),placed=[],used=dirs.map(()=>0);
+  const pool=shuffle(THEMES[theme].w.split(' ').filter(x=>x.length<=N)).slice(0,12).sort((a,b)=>b.length-a.length);
+  for(const w of pool){if(placed.length>=8)break;let best=null,bs=-1e9;
+    dirs.forEach(([dr,dc],di)=>{for(let r0=0;r0<N;r0++)for(let c0=0;c0<N;c0++){const re=r0+dr*(w.length-1),ce=c0+dc*(w.length-1);if(re<0||re>=N||ce<0||ce>=N)continue;
+      let ok=true,ov=0;const cells=[];for(let k=0;k<w.length;k++){const i=(r0+dr*k)*N+c0+dc*k;if(g[i]){if(g[i]!==w[k]){ok=false;break}ov++}cells.push(i)}
+      if(!ok||ov===w.length)continue;
+      const sc=ov*6-used[di]*9+Math.random()*4;if(sc>bs){bs=sc;best={cells,di}}}});
+    if(!best)continue;best.cells.forEach((i,k)=>g[i]=w[k]);used[best.di]++;placed.push({w,cells:best.cells,f:-1})}
   const AL='AABCDEEEFGHIIKLMNOOPRRSSTTUWY';for(let i=0;i<g.length;i++)if(!g[i])g[i]=AL[rand(AL.length)];
   return{theme,diff,g,words:placed.sort((a,b)=>a.w.localeCompare(b.w)),done:false,time:0}}
 function WordSearch(){
